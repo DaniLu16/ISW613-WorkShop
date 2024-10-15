@@ -154,49 +154,68 @@ function deleteUser($id) {
 }
 
 
+function updateUser($usuario) {
+    $id = $usuario['ID'];
+    $nombre = $usuario['Nombre'];
+    $apellido = $usuario['Apellido'];
+    $email = $usuario['Email'];
+    $id_provincia = $usuario['ID_provincia'];
 
-function getUserById($id) {
     $conn = getConnection();
-    $sql = "SELECT * FROM usuario WHERE ID = ?";
-    $stmt = mysqli_prepare($conn, $sql);
-
-    if ($stmt) {
-        mysqli_stmt_bind_param($stmt, "i", $id);
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
-
-        $user = mysqli_fetch_assoc($result);
-        mysqli_stmt_close($stmt);
-        mysqli_close($conn);
-
-        return $user; // Retorna los datos del usuario
-    } else {
-        echo "Error al preparar la consulta: " . mysqli_error($conn);
+    if (!$conn) {
+        echo "Error de conexión: " . mysqli_connect_error();
+        return false;
     }
 
-    mysqli_close($conn);
-    return null;
-}
+    // Verificar si el usuario existe
+    $sql_check = "SELECT * FROM usuario WHERE ID = ?";
+    $stmt_check = mysqli_prepare($conn, $sql_check);
+    mysqli_stmt_bind_param($stmt_check, "i", $id);
+    mysqli_stmt_execute($stmt_check);
+    $result_check = mysqli_stmt_get_result($stmt_check);
 
-function updateUser($id, $nombre, $apellido, $email, $id_provincia) {
-    $conn = getConnection();
+    if (mysqli_num_rows($result_check) == 0) {
+        echo "Usuario no encontrado.";
+        return false;
+    }
+
     $sql = "UPDATE usuario SET Nombre = ?, Apellido = ?, Email = ?, ID_provincia = ? WHERE ID = ?";
     $stmt = mysqli_prepare($conn, $sql);
-
-    if ($stmt) {
-        mysqli_stmt_bind_param($stmt, "sssii", $nombre, $apellido, $email, $id_provincia, $id);
-
-        if (mysqli_stmt_execute($stmt)) {
-            mysqli_stmt_close($stmt);
-            mysqli_close($conn);
-            return true; // Actualización exitosa
-        } else {
-            echo "Error al actualizar el usuario: " . mysqli_stmt_error($stmt);
-        }
-    } else {
+    if (!$stmt) {
         echo "Error al preparar la consulta: " . mysqli_error($conn);
+        mysqli_close($conn);
+        return false;
     }
 
+    mysqli_stmt_bind_param($stmt, "ssssi", $nombre, $apellido, $email, $id_provincia, $id);
+    if (mysqli_stmt_execute($stmt)) {
+        echo "Usuario actualizado correctamente.";
+        // Redirigir a la lista de usuarios después de la actualización
+        mysqli_stmt_close($stmt);
+        mysqli_close($conn);
+        return true;
+    } else {
+        echo "Error al actualizar el usuario: " . mysqli_stmt_error($stmt);
+    }
+
+    mysqli_stmt_close($stmt);
     mysqli_close($conn);
     return false;
+}
+
+
+function getUserById($id) {
+    $conn = getConnection(); // Obtener conexión a la base de datos
+    $sql = "SELECT * FROM usuario WHERE ID = ?";
+    $stmt = mysqli_prepare($conn, $sql);
+    
+    mysqli_stmt_bind_param($stmt, "i", $id);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    
+    $usuario = mysqli_fetch_assoc($result); // Obtener el usuario como un array asociativo
+    mysqli_stmt_close($stmt);
+    mysqli_close($conn);
+    
+    return $usuario; // Retornar el usuario
 }
