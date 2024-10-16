@@ -1,5 +1,39 @@
 <?php 
 
+
+function verifyUser($email, $password) {
+    $conn = getConnection();
+    
+    // Consulta SQL para obtener el usuario basado en el correo electrónico
+    $sql = "SELECT * FROM usuario WHERE Email = ?";
+    $stmt = mysqli_prepare($conn, $sql);
+    
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, "s", $email);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        
+        // Obtener el usuario como un array asociativo
+        $user = mysqli_fetch_assoc($result);
+        
+        // Verificar la contraseña usando password_verify
+        if ($user && password_verify($password, $user['Contraseña'])) {
+            mysqli_stmt_close($stmt);
+            mysqli_close($conn);
+            return $user; // Devuelve el usuario si las credenciales son correctas
+        } else {
+            mysqli_stmt_close($stmt);
+            mysqli_close($conn);
+            return null; // Devuelve null si las credenciales no son válidas
+        }
+    } else {
+        echo "Error al preparar la consulta: " . mysqli_error($conn);
+        mysqli_close($conn);
+        return null; // Devuelve null en caso de error
+    }
+}
+
+
 function getProvinces() {
     $conn = getConnection();
     $provinces = [];
